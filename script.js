@@ -2,36 +2,38 @@
  *    createCanvas, colorMode, HSB, background, ellipseMode, CENTER, ellipse, width, height, fill, stroke, strokeWeight,
  *    noStroke, cos, sin, text, textSize, textFont, frameRate, noFill, loadImage, image, mouseX, mouseY, collideRectCircle,
  *    clear, noLoop, loop, mouseIsPressed, round, key, textAlign, rect, image, tint, LEFT, noTint, loadSound, soundFormats,
- *    createSlider
+ *    createSlider, collidePointRect, loadFont
  */
 
 let saturation,
   brightness,
+  pop,
   sunWidth,
   timetexty,
   angle,
   user,
   yearsPassed,
-  totalDaysPassed;
+  totalDaysPassed,
+  cloud,
+  arrow,
+  pageMode,
+  currentPlanet,
+  spaceFont;
 
 //planet variables
 let Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto;
 var planets = [];
 
 let mercuryOrbitalVelocity = 0.15;
+let mercuryGravity = 2;
 
-let cloud, arrow;
-
-//Details page variables
-let gravityBoxX, gravityBoxY, gravityBoxVelocity;
+//pop up switching variables
+let isStatsPage;
+let isAtmospherePage;
 
 function setup() {
   createCanvas(1200, 800);
   colorMode(HSB, 360, 100, 100);
-
-  //TODO: finish background music -- file size too big
-  //background music: initialize song var
-  //music.play();
 
   //width of the Sun
   sunWidth = 56;
@@ -49,125 +51,156 @@ function setup() {
       "Mercury",
       width / 2 + 50,
       height / 2,
-      8 * 1.2,
+      8,
       mercuryOrbitalVelocity,
       50,
       60,
       88,
       true,
       true,
-      3.7,
+      mercuryGravity,
       290,
-      800
+      800,
+      3.7,
+      0,
+      0.33,
+      0
     );
     Venus = new Planet(
       "Venus",
       width / 2 + 100,
       height / 2,
-      12 * 1.2,
+      12,
       mercuryOrbitalVelocity * 0.39,
       85,
       30,
       225,
       false,
       true,
-      8.9,
+      mercuryGravity * 2.4,
       480,
-      480
+      480,
+      8.9,
+      92,
+      4.87,
+      0
     );
     Earth = new Planet(
       "Earth",
       width / 2 + 150,
       height / 2,
-      13 * 1.2,
+      13,
       mercuryOrbitalVelocity * 0.24,
       120,
       240,
       365,
       false,
       true,
-      9.8,
+      mercuryGravity * 2.65,
       -25,
-      45
+      45,
+      9.8,
+      1.014,
+      5.97,
+      1
     );
     Mars = new Planet(
       "Mars",
       width / 2 + 200,
       height / 2,
-      10 * 1.2,
+      10,
       mercuryOrbitalVelocity * 0.12,
       155,
       3,
       687,
       false,
       true,
-      3.7,
+      mercuryGravity,
       -140,
-      20
+      20,
+      3.7,
+      0.01,
+      0.642,
+      2
     );
     Jupiter = new Planet(
       "Jupiter",
       width / 2 + 250,
       height / 2,
-      19 * 1.2,
+      19,
       mercuryOrbitalVelocity * 0.02,
       190,
       35,
       4333,
       false,
       false,
-      24.8,
+      mercuryGravity * 6.74,
       -128,
-      -13
+      -13,
+      24.8,
+      "unknown",
+      1898,
+      79
     );
     Saturn = new Planet(
       "Saturn",
       width / 2 + 300,
       height / 2,
-      18 * 1.2,
+      18,
       mercuryOrbitalVelocity * 0.0083,
       225,
       70,
       10759,
       true,
       false,
-      10.4,
+      mercuryGravity * 2.82,
       -185,
-      -122
+      -122,
+      10.4,
+      "n/a",
+      568,
+      82
     );
     Uranus = new Planet(
       "Uranus",
       width / 2 + 350,
       height / 2,
-      16 * 1.2,
+      16,
       mercuryOrbitalVelocity * 0.0029,
       260,
       177,
       30689,
       false,
       false,
-      8.9,
+      mercuryGravity * 2.4,
       -214,
-      -214
+      -214,
+      8.9,
+      "n/a",
+      86.8,
+      27
     );
     Neptune = new Planet(
       "Neptune",
       width / 2 + 400,
       height / 2,
-      16 * 1.2,
+      16,
       mercuryOrbitalVelocity * 0.00146,
       295,
       210,
       60182,
       false,
       false,
+      mercuryGravity * 3,
+      -200,
+      -200,
       11.2,
-      -225
+      "n/a",
+      102,
+      14
     );
     planets.push(Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune);
   }
-  //TODO: should we include pluto?
-  //Pluto = new Planet(width/2 + 450, height/2, 10, 0.02, 450, 0);
 
   //distanceFromSun = 30;
   //50 is the radius of the planet's orbital path
@@ -190,15 +223,35 @@ function setup() {
   );
 
   cloud = loadImage(
-    "https://cdn.glitch.com/280a71ac-f06a-489e-8883-e6f1d89878ef%2Fcloud%20planet%20project.png?v=1628105238050"
+    "https://cdn.glitch.com/14b752c7-af9b-404b-87b5-8f5c3e9fa96b%2Fcloud%20planet%20project.png?v=1628222608358"
   );
   arrow = loadImage(
     "https://cdn.glitch.com/280a71ac-f06a-489e-8883-e6f1d89878ef%2Farrow.png?v=1628105249258"
   );
+
+  pageMode = "solar system";
+  spaceFont = loadFont(
+    "https://cdn.glitch.com/14b752c7-af9b-404b-87b5-8f5c3e9fa96b%2FAstroSpace-eZ2Bg.ttf?v=1628204253236"
+  );
+  pop = createAudio(
+    "https://cdn.glitch.com/14b752c7-af9b-404b-87b5-8f5c3e9fa96b%2Fsfx-pop.mp3?v=1628231019505"
+  );
 }
 
 function draw() {
-  solarSystemModel();
+  if (pageMode === "solar system") {
+    solarSystemModel();
+  } else if (pageMode === "planet page") {
+    isStatsPage = false;
+    isAtmospherePage = false;
+    currentPlanet.detailsPage();
+  } else if (pageMode === "stats page") {
+    currentPlanet.detailsPage();
+    currentPlanet.displayStats();
+  } else if (pageMode === "atmosphere page") {
+    currentPlanet.detailsPage();
+    currentPlanet.displayAtmosphereInfo();
+  }
 }
 
 function solarSystemModel() {
@@ -212,13 +265,16 @@ function solarSystemModel() {
 
   //Title text
   fill(360);
-  textSize(60);
+  textSize(45);
   //textFont('Press Start 2P');
   textAlign(LEFT);
-  text("Click each planet to learn more!", width / 5, 100);
-  textSize(45);
+  textFont(spaceFont);
+  text("Solar System Simulator", width / 5 + 40, 80);
+  textSize(20);
+  text("(Click each planet to learn more)", width / 3, 120);
+  textSize(35);
   text("Orbital Periods:", width / 1.5, height / 3.5);
-  textSize(30);
+  textSize(27);
 
   fill(100);
   //draw the orbital path and set the planet into motion on it
@@ -291,7 +347,11 @@ class Planet {
     rocky,
     gravity,
     minTemp,
-    maxTemp
+    maxTemp,
+    gravConstant,
+    pressure,
+    mass,
+    numMoons
   ) {
     this.name = name;
     this.planetX = planetX;
@@ -307,6 +367,18 @@ class Planet {
     this.isGrey = isGrey;
     this.rocky = rocky;
     this.gravity = gravity;
+    this.minTemp = minTemp;
+    this.maxTemp = maxTemp;
+    this.gravConstant = gravConstant;
+    this.pressure = pressure;
+    this.mass = mass;
+    this.numMoons = numMoons;
+    this.boxX = width - 400;
+    this.boxY = 30;
+    this.boxWidth = 120;
+    this.boxHeight = 80;
+    this.boxVelocity = 0;
+    this.fall = false;
   }
 
   drawOrbitalPath() {
@@ -329,7 +401,6 @@ class Planet {
 
   orbitPlanet() {
     //TODO: if time, add day counter
-    //TODO: slow down orbit for easier clicking
     this.planetX = width / 3.5 + cos(this.angle) * this.distanceFromSun;
     this.planetY = height / 1.75 + sin(this.angle) * this.distanceFromSun;
     this.angle += this.angleIncrement;
@@ -349,31 +420,37 @@ class Planet {
       ) &&
       mouseIsPressed
     ) {
-      noLoop();
-      this.detailsPage();
-    }
-  if  (
-    collideRectRect(
-      mouseX,
-      mouseY,
-      55,
-      55,
-      250,
-      30,
-      120,
-      80
-      ) &&
-      mouseIsPressed
-    ){
-      fill("white");
-      rect(width / 2, height / 2, 240, 160);
+      //noLoop();
+      //this.detailsPage();
+      pop.play();
+      pageMode = "planet page";
+      currentPlanet = this;
     }
   }
+
   detailsPage() {
     clear();
     background(0);
 
-    //displays the planet (semicircle) --> if the planet is grey, make it grey
+    fill(100);
+    textAlign(CENTER);
+    textSize(40);
+    text(this.name, width / 2, 70);
+
+    this.displayStatsBox();
+
+    this.displayAtmosphere();
+
+    this.displayGround();
+
+    this.displayGravityBox();
+
+    this.dropGravityBox();
+
+    noTint();
+  }
+
+  displayGround() {
     if (this.isGrey) {
       fill(this.color);
     } else {
@@ -382,70 +459,161 @@ class Planet {
 
     ellipse(width / 2, height + 700, 1900);
 
-    fill(100);
-    textAlign(CENTER);
-    textSize(40);
-    text(this.name, width / 2, 70);
-
-    //displays the atmosphere --> tint it the color of the planet (grey if the planet is grey)
-    if (this.isGrey) {
-      tint(this.color);
-    } else {
-      tint(this.color, 60, 90);
-    }
-
-    //display the cloud --> only if it has an atmosphere -> mercury is the only one that doesn't
-    image(cloud, width / 2 - 150, 100, 300, 300);
-    fill(0);
-    textSize(25);
-    text("Atmosphere", width / 2, 250);
-    text("(Click me!)", width / 2, 280);
-
     textSize(35);
+    fill(0);
     if (this.rocky) {
       text("Rocky Ground", width / 2, 700);
     } else {
       text("Gaseous Ground", width / 2, 700);
     }
 
-    //draw the Stats and test gravity boxes
-
-    //purple stats box and purple gravity box
-    gravityBoxX = width - 340;
-    gravityBoxY = 65;
-
-    fill(270, 80, 100);
-    rect(250, 30, 120, 80);
-    rect(width - 400, 30, 120, 80);
-
-    fill(0);
-    textSize(20);
-    text("Stats", 310, 65);
-    text("(Click me!)", 310, 90);
-
-    textSize(20);
-    text("Test Gravity", width - 340, 65);
-    text("(Click me!)", width - 340, 90);
-    fill(100);
-
-    //We want to make the gravity box fall when it hits the ground
-
-    //expanded stats box
-    //fill("white");
-    //rect(width / 2, height / 2, 240, 160);
-
-    //press a to go back
-    fill(0);
     textSize(25);
     text("press [space] to go back", width / 2, height - 60);
+  }
 
-    noTint();
+  displayAtmosphere() {
+    if (this.isGrey) {
+      tint(this.color);
+    } else {
+      tint(this.color, 60, 90);
+    }
+
+    image(cloud, width / 2 - 150, 150, 300, 150);
+    fill(0);
+    textSize(25);
+    text("Atmosphere", width / 2, 230);
+    text("(Click me!)", width / 2, 260);
+  }
+
+  displayStatsBox() {
+    fill(270, 80, 100);
+    rect(250, 30, 120, 80);
+    fill(0);
+    textSize(17);
+    text("Stats", 310, 65);
+    text("(Click me!)", 310, 90);
+  }
+
+  displayGravityBox() {
+    fill(270, 80, 100);
+    rect(this.boxX, this.boxY, this.boxWidth, this.boxHeight);
+
+    if (!this.fall) {
+      textSize(15);
+      fill(0);
+      text("Test Gravity", width - 340, 65);
+      text("(Click me!)", width - 340, 90);
+    }
+  }
+
+  dropGravityBox() {
+    //collidePointRect(pointX, pointY, x, y, width, height)
+    if (
+      collidePointRect(
+        mouseX,
+        mouseY,
+        this.boxX,
+        this.boxY,
+        this.boxWidth,
+        this.boxHeight
+      ) &&
+      mouseIsPressed
+    ) {
+      this.fall = true;
+    }
+
+    if (this.fall) {
+      this.boxVelocity += this.gravity;
+      this.boxY += this.boxVelocity;
+
+      if (this.boxY >= height - this.boxHeight) {
+        this.boxVelocity = 0;
+        this.boxX = width - 400;
+        this.boxY = 30;
+        this.fall = false;
+      }
+    }
+  }
+
+  displayStats() {
+    isStatsPage = true;
+    fill("white");
+    rect(300, 200, 600, 400);
+    fill("grey");
+    textSize(45);
+    text("STATS", 600, 255);
+    fill("black");
+    textSize(25);
+    text(`Gravitational Constant: ${this.gravConstant} m/s^2`, 600, 310);
+    if (this.minTemp === this.maxTemp) {
+      text(`Avg. Temperature: ${this.minTemp}\u00B0C`, 600, 355);
+    } else {
+      text(
+        `Temperature Range: ${this.minTemp} to ${this.maxTemp}\u00B0C`,
+        600,
+        355
+      );
+    }
+    if (this.pressure == "n/a") {
+      text(`Surface Pressure: ${this.pressure}`, 600, 400);
+    } else {
+      text(`Surface Pressure: ${this.pressure} bars`, 600, 400);
+    }
+    text(`Mass: ${this.mass} x 10^24 kg`, 600, 445);
+    text(`Number of Moons: ${this.numMoons}`, 600, 490);
+    textSize(20);
+    text("press [space] to go back", 600, 535);
+  }
+
+  displayAtmosphereInfo() {
+    isAtmospherePage = true;
+    fill("white");
+    rect(300, 200, 600, 400);
+    fill("grey");
+    textSize(45);
+    text("ATMOSPHERE", 600, 255);
+    fill("black");
+    textSize(25);
+    //put the atmosphere info here, you'll want to add a variable to the
+    //planet class that's like atmosphereInfo where you can store the description,
+    //and then put it in for each class and retrieve it here (since these descriptions
+    //are sentences long, you might want to just create a global variable for each
+    //planet's description and then pass it down into the constructor, text me if you
+    //want clarification or help)
+    //use \n for line breaks in your passed variables
+    text(
+      "This is where you can \n put the atmosphere \n descriptions.",
+      600,
+      310
+    );
+    textSize(20);
+    text("press [space] to go back", 600, 535);
   }
 }
 
 function keyTyped() {
-  if (key === " ") {
-    loop();
-    solarSystemModel();
+  if (key === " " && !isStatsPage && !isAtmospherePage) {
+    //loop();
+    //solarSystemModel();
+    pageMode = "solar system";
+  } else if (key === " " && (isStatsPage || isAtmospherePage)) {
+    pageMode = "planet page";
+  }
+}
+
+function mouseClicked() {
+  statsCollide();
+  atmosphereCollide();
+}
+
+function statsCollide() {
+  if (collidePointRect(mouseX, mouseY, 250, 30, 120, 80)) {
+    pageMode = "stats page";
+  }
+}
+
+function atmosphereCollide() {
+  if (collidePointRect(mouseX, mouseY, 450, 150, 300, 150)) {
+    pageMode = "atmosphere page";
   }
 }
